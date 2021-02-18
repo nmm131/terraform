@@ -1,47 +1,33 @@
 terraform {
   required_providers {
     aws = {
-      source = "hashicorp/aws"
-    }
-    docker = {
-      source = "kreuzwerker/docker"
+      source  = "hashicorp/aws"
+      version = "3.28.0"
     }
   }
 }
 
 provider "aws" {
-  profile                 = "default"
-  region                  = "us-east-1"
-  shared_credentials_file = "credentials"
+  profile = "default"
+  region  = var.region
+  //  shared_credentials_file = "~/.aws/credentials"
 }
 
-provider "docker" {
-
-}
-
-
-// AWS Resources
 resource "aws_s3_bucket" "tf_course" {
-  bucket = "tf-course-20210207"
+  bucket = "tf-course-20210217"
   acl    = "private"
 }
 
-
-
-
 data "aws_ami" "ubuntu" {
   most_recent = true
-
   filter {
     name   = "name"
     values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
   }
-
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
   }
-
   owners = ["099720109477"] # Canonical
 }
 
@@ -51,30 +37,20 @@ resource "aws_instance" "web" {
   provisioner "local-exec" {
     command = "echo ${aws_instance.web.public_ip} >> private_ips.txt"
   }
-
   tags = {
     Name = "DevOps_Cohort_2020"
   }
 }
-/*
+
+
 resource "aws_eip" "ip" {
   vpc      = true
   instance = aws_instance.web.id
 }
-*/
 
-// Docker Resources
-resource "docker_image" "nginx" {
-  name         = "nginx:latest"
-  keep_locally = false
-}
 
-resource "docker_container" "nginx" {
-  image = docker_image.nginx.latest
-  name  = "tutorial"
-  ports {
-    internal = 80
-    external = 8000
-  }
+
+output "ip" {
+  value = aws_eip.ip.public_ip
 }
 
